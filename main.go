@@ -1,11 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/natealcedo/intro-golang/types"
+)
 
 func main() {
-	user := User{
-		username: "Nate",
-		age:      getNumber(),
+	user := types.User{
+		Username: "Nate",
+		Age:      32,
 	}
-	fmt.Printf("User %+v\n", user)
+	fmt.Printf("User: %+v\n", user)
 }
