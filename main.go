@@ -3,5 +3,9 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Println("hello world")
+	user := User{
+		username: "Nate",
+		age:      getNumber(),
+	}
+	fmt.Printf("User %+v\n", user)
 }
