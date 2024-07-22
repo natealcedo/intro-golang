@@ -7,68 +7,60 @@ import (
 )
 
 type Worker interface {
-	Start(wg *sync.WaitGroup)
+	Start()
+	ProcessTask(task Task)
 }
 
-type Work struct {
+// ConcreteWorker is a worker that processes tasks
+type ConcreteWorker struct {
 	id   int
-	task chan int
+	task chan Task
+	wg   *sync.WaitGroup
 }
 
-func NewWork(id int) *Work {
-	return &Work{
-		id:   id,
-		task: make(chan int),
-	}
-}
-
-func (w *Work) Start(wg *sync.WaitGroup) {
+func (w *ConcreteWorker) Start() {
 	go func() {
 		for task := range w.task {
-			fmt.Printf("Work %d processing task: %d\n", w.id, task)
+			fmt.Printf("Task %d processing task: %d\n", w.id, task)
 			time.Sleep(time.Second) // Simulate task processing time
-			wg.Done()               // Signal task completion here, inside the worker's goroutine
+			w.wg.Done()             // Signal task completion here, inside the worker's goroutine
 		}
 	}()
 }
 
-func (w *Work) ProcessTask(task int) {
+// Task struct
+type Task struct {
+	id int
+}
+
+func (w *ConcreteWorker) ProcessTask(task Task) {
 	w.task <- task
 }
 
 func main() {
-	var wg sync.WaitGroup
-	workToBeDone := make([]*Work, 5)
+	wg := sync.WaitGroup{}
+	numberOfWorkers := 1000
+	numberOfTasks := 10000
 
-	// Initialize workers and share the same WaitGroup among them
-	for i := range workToBeDone {
-		workToBeDone[i] = NewWork(i)
-		wg.Add(1) // Increment here for each worker
-		go workToBeDone[i].Start(&wg)
-	}
+	workers := make([]Worker, numberOfWorkers)
 
-	tasks := []int{1, 2, 3, 4, 5}
-	taskChannel := make(chan int, len(tasks))
-
-	// Send tasks to the channel
-	go func() {
-		for _, task := range tasks {
-			taskChannel <- task
+	// Initialize Workers
+	for i := 0; i < numberOfWorkers; i++ {
+		worker := &ConcreteWorker{
+			id:   i,
+			task: make(chan Task),
+			wg:   &wg,
 		}
-		close(taskChannel) // Close the channel to signal no more tasks will be sent
-	}()
-
-	// Distribute tasks to workers
-	for task := range taskChannel {
-		workerIndex := task % len(workToBeDone)
-		workToBeDone[workerIndex].ProcessTask(task)
+		workers[i] = worker
+		worker.Start()
 	}
 
-	// Close each worker's task channel to signal no more tasks will be sent
-	for _, worker := range workToBeDone {
-		close(worker.task)
+	// Create and distribute tasks among workers
+	for i := 0; i < numberOfTasks; i++ {
+		wg.Add(1)
+		workers[i%numberOfWorkers].ProcessTask(Task{id: i})
 	}
 
-	wg.Wait() // Wait for all tasks to be processed
-	fmt.Println("All tasks processed.")
+	wg.Wait()
+	fmt.Println("All tasks completed")
 }
