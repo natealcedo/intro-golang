@@ -1,24 +1,13 @@
 package main
 
-import "fmt"
-
-type Database struct {
-	user string
+type Player struct {
+	name string
+	hp   int
 }
 
-type Server struct {
-	db *Database
-}
-
-func (s *Server) GetUserFromDB() string {
-	if s.db == nil {
-		panic("Database is not initialized")
-	}
-	return s.db.user
+func calculateValues(x, y int) int {
+	return x + y
 }
 
 func main() {
-	s := &Server{}
-	user := s.GetUserFromDB()
-	fmt.Println("users ", user)
 }
